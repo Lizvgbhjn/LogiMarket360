@@ -14,7 +14,7 @@ public sealed class OperacionesPedido(
     IDevolucionRepository devoluciones, IMovimientoInventarioRepository movimientos,
     IEventoOutboxRepository outbox, IAuditoriaRepository auditoria, IUnitOfWork unidad,
     IServicioSesion sesion, IGuiaEntrega entrega, IMetricasSesion metricas,
-    IPublicadorEventos publicador, CommandInvoker invocador)
+    IPublicadorEventos publicador, CommandInvoker invocador, IReembolsadorSimulado reembolsador)
 {
     public Task<ResultadoOperacionDto> DespacharAsync(DespacharPedidoDto datos) =>
         invocador.EjecutarAsync(new DespacharPedidoCommand(
@@ -26,7 +26,7 @@ public sealed class OperacionesPedido(
     public Task<ResultadoOperacionDto> DevolverAsync(SolicitarDevolucionDto datos) =>
         invocador.EjecutarAsync(new ProcesarDevolucionCommand(
             pedidos, productos, devoluciones, movimientos, outbox, auditoria, unidad, sesion,
-            datos, metricas, publicador));
+            datos, reembolsador, metricas, publicador));
 
     public async Task<ResultadoOperacionDto> EntregarAsync(int id, CancellationToken ct = default)
     {

@@ -19,7 +19,7 @@ public class PasarelaLegadaSimulada
         if (InducirError)
             throw new InvalidOperationException("Rechazo inducido en Pasarela Legada simulada.");
 
-        return $"LEGACY-AUTH-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        return $"LEGACY-AUTH-{Guid.NewGuid().ToString("N").ToUpperInvariant()}";
     }
 }
 
@@ -37,6 +37,10 @@ public class PasarelaLegadaAdapter : IPasarelaPago
 
     public Task<ResultadoCobro> CobrarAsync(decimal monto, string claveIdempotencia, string concepto, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+        if (!ContratoCobro.EsValido(monto, claveIdempotencia))
+            return Task.FromResult(new ResultadoCobro(false, string.Empty, 0m,
+                "Monto o clave de idempotencia inválidos.", NombreProveedor));
         try
         {
             // Convierte decimal a centavos enteros (long)
@@ -70,6 +74,10 @@ public class PasarelaModernaSimulada : IPasarelaPago
 
     public Task<ResultadoCobro> CobrarAsync(decimal monto, string claveIdempotencia, string concepto, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+        if (!ContratoCobro.EsValido(monto, claveIdempotencia))
+            return Task.FromResult(new ResultadoCobro(false, string.Empty, 0m,
+                "Monto o clave de idempotencia inválidos.", NombreProveedor));
         if (InducirError)
         {
             return Task.FromResult(new ResultadoCobro(
@@ -80,12 +88,22 @@ public class PasarelaModernaSimulada : IPasarelaPago
                 NombreProveedor));
         }
 
-        var authCode = $"MOD-AUTH-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        var authCode = $"MOD-AUTH-{Guid.NewGuid().ToString("N").ToUpperInvariant()}";
         return Task.FromResult(new ResultadoCobro(
             true,
             authCode,
             monto,
             "Transacción aprobada satisfactoriamente por Pasarela Moderna.",
             NombreProveedor));
+    }
+}
+
+internal static class ContratoCobro
+{
+    internal static bool EsValido(decimal monto, string clave)
+    {
+        // Ambas pasarelas aceptan importes positivos, expresables como centavos enteros.
+        return monto >= 0.01m && monto <= long.MaxValue / 100m
+            && decimal.Round(monto, 2) == monto && !string.IsNullOrWhiteSpace(clave);
     }
 }

@@ -7,7 +7,7 @@ using LogiMarket.Domain.Strategy;
 
 public class Pedido
 {
-    public int Id { get; set; }
+    public int Id { get; private set; }
     public string Codigo { get; private set; } = string.Empty;
     public int ClienteId { get; private set; }
     public Cliente? Cliente { get; set; }

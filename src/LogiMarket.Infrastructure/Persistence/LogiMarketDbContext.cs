@@ -30,7 +30,7 @@ public class LogiMarketDbContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             var rutaDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logimarket360.db");
-            optionsBuilder.UseSqlite($"Data Source={rutaDb}");
+            optionsBuilder.UseSqlite($"Data Source={rutaDb};Foreign Keys=True");
         }
     }
 
@@ -62,6 +62,11 @@ public class LogiMarketDbContext : DbContext
         modelBuilder.Entity<Producto>(b =>
         {
             b.HasKey(p => p.Sku);
+            b.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Productos_Stock", "\"Stock\" >= 0");
+                t.HasCheckConstraint("CK_Productos_Precio", "CAST(\"Precio\" AS NUMERIC) > 0");
+            });
             b.Property(p => p.Sku).HasMaxLength(30).IsRequired();
             b.Property(p => p.Nombre).HasMaxLength(150).IsRequired();
             b.Property(p => p.Precio).HasPrecision(18, 2);
@@ -89,6 +94,13 @@ public class LogiMarketDbContext : DbContext
             b.HasKey(c => c.Id);
             b.HasIndex(c => new { c.KitCodigo, c.HijoCodigo }).IsUnique();
             b.Property(c => c.HijoCodigo).HasMaxLength(30).IsRequired();
+            b.Property<string>("ProductoHijoSku").HasComputedColumnSql(
+                "CASE WHEN \"EsHijoKit\" = 0 THEN \"HijoCodigo\" ELSE NULL END", stored: false);
+            b.Property<string>("KitHijoCodigo").HasComputedColumnSql(
+                "CASE WHEN \"EsHijoKit\" = 1 THEN \"HijoCodigo\" ELSE NULL END", stored: false);
+            b.HasOne<Producto>().WithMany().HasForeignKey("ProductoHijoSku").OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Kit>().WithMany().HasForeignKey("KitHijoCodigo").OnDelete(DeleteBehavior.Restrict);
+            b.ToTable(t => t.HasCheckConstraint("CK_KitComponentes_Cantidad", "\"Cantidad\" > 0"));
         });
 
         // Pedido
@@ -154,6 +166,7 @@ public class LogiMarketDbContext : DbContext
             b.HasKey(c => c.Id);
             b.Property(c => c.PrecioUnitarioSnapshot).HasPrecision(18, 2);
             b.Property(c => c.PesoKgSnapshot).HasPrecision(18, 3);
+            b.HasOne<Producto>().WithMany().HasForeignKey(c => c.Sku).OnDelete(DeleteBehavior.Restrict);
         });
 
         // Pago
@@ -190,6 +203,7 @@ public class LogiMarketDbContext : DbContext
             b.HasKey(m => m.Id);
             b.Property(m => m.Sku).HasMaxLength(30).IsRequired();
             b.Property(m => m.TipoMovimiento).HasConversion<string>();
+            b.HasOne<Producto>().WithMany().HasForeignKey(m => m.Sku).OnDelete(DeleteBehavior.Restrict);
         });
 
         // EventoOutbox

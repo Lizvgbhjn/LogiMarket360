@@ -1,6 +1,8 @@
 namespace LogiMarket.Tests;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using LogiMarket.Application.Builder;
 using LogiMarket.Application.Command;
 using LogiMarket.Application.DTOs;
@@ -12,10 +14,38 @@ using LogiMarket.Domain.Enums;
 using LogiMarket.Infrastructure.Adapter;
 using LogiMarket.Infrastructure.Bridge;
 using LogiMarket.Infrastructure.Outbox;
+using LogiMarket.Infrastructure.Persistence;
+using LogiMarket.Infrastructure.FactoryMethod;
 using Xunit;
 
 public class PruebasIntegridadArquitecturaTests
 {
+    [Fact]
+    public async Task SQLite_ImpideStockNegativoPrecioCeroYReferenciasSinPrincipal()
+    {
+        using var fixture = new TestFixture();
+        using var scope = fixture.ServiceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LogiMarketDbContext>();
+        Assert.Contains(await db.Database.GetAppliedMigrationsAsync(), m => m.EndsWith("_IntegridadCatalogo"));
+        await using var con = new SqliteConnection($"Data Source={fixture.DbPath};Foreign Keys=True");
+        await con.OpenAsync();
+        var cambiosInvalidos = new[]
+        {
+            "UPDATE Productos SET Stock = -1 WHERE Sku = 'P01'",
+            "UPDATE Productos SET Precio = '0.00' WHERE Sku = 'P01'",
+            "UPDATE KitComponentes SET HijoCodigo = 'SIN-PRODUCTO' WHERE Id = (SELECT MIN(Id) FROM KitComponentes WHERE EsHijoKit = 0)",
+            "UPDATE KitComponentes SET HijoCodigo = 'SIN-KIT' WHERE Id = (SELECT MIN(Id) FROM KitComponentes WHERE EsHijoKit = 1)",
+            "DELETE FROM Productos WHERE Sku = 'P01'"
+        };
+        foreach (var sql in cambiosInvalidos)
+        {
+            await using var cmd = con.CreateCommand();
+            cmd.CommandText = sql;
+            var rechazo = await Assert.ThrowsAsync<SqliteException>(() => cmd.ExecuteNonQueryAsync());
+            Assert.Equal(19, rechazo.SqliteErrorCode);
+        }
+    }
+
     [Fact]
     public async Task P35_DevolverPedidoEntregadoPorDefectoYRepetirSolicitud_Ana54ReembolsoYDevolucionUnica()
     {
@@ -59,7 +89,7 @@ public class PruebasIntegridadArquitecturaTests
         // 1. Primera solicitud de devolución por DEFECTO
         var cmd1 = new ProcesarDevolucionCommand(
             pedidoRepo, prodRepo, devRepo, movRepo, outboxRepo, auditoriaRepo, unitOfWork, sesion,
-            new SolicitarDevolucionDto(pedido.Id, MotivoDevolucion.DEFECTO, false, "Falla en periférico"));
+            new SolicitarDevolucionDto(pedido.Id, MotivoDevolucion.DEFECTO, false, "Falla en periférico"), new ReembolsadorSimulado());
 
         var res1 = await cmd1.EjecutarAsync();
         Assert.True(res1.Exitoso);
@@ -68,6 +98,8 @@ public class PruebasIntegridadArquitecturaTests
         var dev = await devRepo.ObtenerPorPedidoIdAsync(pedido.Id);
         Assert.NotNull(dev);
         Assert.Equal(54.00m, dev.MontoReembolsado);
+        var evento = Assert.Single(await outboxRepo.ObtenerTodosAsync(), e => e.TipoEvento == "DevolucionAceptada");
+        Assert.Contains($"REEMBOLSO-SIM-{pedido.Id}", evento.ContenidoJson);
 
         // Stock reintegrado: P01 7->8, P02 4->5, P03 19->20
         var p01 = await prodRepo.ObtenerPorSkuAsync("P01");
@@ -80,7 +112,7 @@ public class PruebasIntegridadArquitecturaTests
         // 2. Repetir la solicitud sobre el mismo pedido ya devuelto -> Debe ser RECHAZADA (devolución única)
         var cmd2 = new ProcesarDevolucionCommand(
             pedidoRepo, prodRepo, devRepo, movRepo, outboxRepo, auditoriaRepo, unitOfWork, sesion,
-            new SolicitarDevolucionDto(pedido.Id, MotivoDevolucion.DEFECTO, false, "Segundo intento"));
+            new SolicitarDevolucionDto(pedido.Id, MotivoDevolucion.DEFECTO, false, "Segundo intento"), new ReembolsadorSimulado());
 
         var res2 = await cmd2.EjecutarAsync();
         Assert.False(res2.Exitoso);
@@ -166,37 +198,62 @@ public class PruebasIntegridadArquitecturaTests
     public async Task P37_Outbox_FallaNotificadorYReiniciarProcesador_RecuperaYProcesaUnaSolaVez()
     {
         using var fixture = new TestFixture();
-        using var scope = fixture.ServiceProvider.CreateScope();
-        var outboxRepo = scope.ServiceProvider.GetRequiredService<IEventoOutboxRepository>();
-        var processor = scope.ServiceProvider.GetRequiredService<OutboxProcessor>();
-
-        // Crear evento pendiente en Outbox
-        var evento = new EventoOutbox
+        int eventoId;
+        using (var primerScope = fixture.ServiceProvider.CreateScope())
         {
-            TipoEvento = "PedidoPagado",
-            ContenidoJson = "{\"PedidoId\": 99, \"Codigo\": \"PED-OUT-01\"}",
-            FechaOcurrencia = DateTime.UtcNow,
-            Estado = EstadoOutbox.PENDIENTE
-        };
-        await outboxRepo.AgregarAsync(evento);
+            var sp = primerScope.ServiceProvider;
+            var eventos = sp.GetRequiredService<IEventoOutboxRepository>();
+            var pedidos = sp.GetRequiredService<IPedidoRepository>();
+            var cliente = await sp.GetRequiredService<IClienteRepository>().ObtenerPorCodigoAsync("C001");
+            var pedido = new PedidoBuilder().ConCodigo("PED-OUT-01").ConCliente(cliente!)
+                .AgregarItem(new ProductoSimple("P01", "Mouse", "", "", 20m, 0.2m, 8)).Construir();
+            await pedidos.AgregarAsync(pedido);
+            var evento = new EventoOutbox
+            {
+                TipoEvento = "PedidoPagado",
+                ContenidoJson = System.Text.Json.JsonSerializer.Serialize(new { PedidoId = pedido.Id })
+            };
+            await eventos.AgregarAsync(evento);
+            eventoId = evento.Id;
 
-        // 1. Simular falla inducida en el procesador de Outbox
-        processor.InducirFallo = true;
-        var procesadosFallo = await processor.ProcesarPendientesAsync();
-        Assert.Equal(0, procesadosFallo);
+            var notificador = new EnvioOutboxSimulado(pedidos, new CreadorNoDisponible(),
+                sp.GetRequiredService<SmsNotificadorCreator>(), new ConfiguracionEnvioOutbox());
+            var procesador = new OutboxProcessor(eventos, notificador, sp.GetRequiredService<IAuditoriaRepository>());
+            Assert.Equal(0, await procesador.ProcesarPendientesAsync());
+            var fallo = Assert.Single(await eventos.ObtenerTodosAsync());
+            Assert.Equal(EstadoOutbox.FALLIDO, fallo.Estado);
+            Assert.Equal("Notificador no disponible", fallo.UltimoError);
+            Assert.Equal(1, fallo.Reintentos);
+        }
 
-        var evFallo = (await outboxRepo.ObtenerTodosAsync()).First(e => e.Id == evento.Id);
-        Assert.Equal(EstadoOutbox.FALLIDO, evFallo.Estado);
-        Assert.Equal(1, evFallo.Reintentos);
+        // La tarea periódica usa este mismo ciclo y crea su propio scope de SQLite.
+        var automatico = fixture.ServiceProvider.GetRequiredService<OutboxAutomatico>();
+        Assert.Equal(1, await automatico.EjecutarCicloAsync(true));
+        Assert.Equal(0, await automatico.EjecutarCicloAsync(true));
 
-        // 2. Reiniciar procesador con falla resuelta y reprocesar
-        processor.InducirFallo = false;
-        var procesadosRecuperados = await processor.ReprocesarFallidosAsync();
-        Assert.Equal(1, procesadosRecuperados);
+        using var lectura = fixture.ServiceProvider.CreateScope();
+        var final = Assert.Single(await lectura.ServiceProvider.GetRequiredService<IEventoOutboxRepository>().ObtenerTodosAsync());
+        Assert.Equal(eventoId, final.Id);
+        Assert.Equal(EstadoOutbox.PROCESADO, final.Estado);
+        Assert.NotNull(final.FechaProcesamiento);
+        Assert.Null(final.UltimoError);
+        var registros = await lectura.ServiceProvider.GetRequiredService<IAuditoriaRepository>().ObtenerTodosAsync();
+        var aviso = Assert.Single(registros, a => a.Accion == "AVISO_EMAIL");
+        Assert.Contains("ana@ejemplo.test", aviso.Detalle);
+        Assert.Single(registros, a => a.Accion == "OUTBOX_PROCESADO");
+    }
 
-        var evFinal = (await outboxRepo.ObtenerTodosAsync()).First(e => e.Id == evento.Id);
-        Assert.Equal(EstadoOutbox.PROCESADO, evFinal.Estado);
-        Assert.NotNull(evFinal.FechaProcesamiento);
+    private sealed class CreadorNoDisponible : NotificadorCreator
+    {
+        public override INotificador CrearNotificador() => new NotificadorNoDisponible();
+    }
+
+    private sealed class NotificadorNoDisponible : INotificador
+    {
+        public string Canal => "EMAIL";
+
+        public Task<ResultadoNotificacion> EnviarAsync(string destinatario, string mensaje, CancellationToken ct = default) =>
+            Task.FromException<ResultadoNotificacion>(new InvalidOperationException("Notificador no disponible"));
     }
 
     [Fact]
@@ -214,6 +271,35 @@ public class PruebasIntegridadArquitecturaTests
 
         Assert.True(res1.Exitoso);
         Assert.True(res2.Exitoso);
+        foreach (var resultado in new[] { res1, res2 })
+        {
+            Assert.Equal(10m, resultado.MontoCobrado);
+            Assert.Matches("^(MOD|LEGACY)-AUTH-[0-9A-F]{32}$", resultado.ReferenciaTransaccion);
+        }
+        Assert.NotEqual(res1.ReferenciaTransaccion, res2.ReferenciaTransaccion);
+        foreach (var pasarela in new[] { prov1, prov2 })
+        {
+            foreach (var (monto, clave) in new[] { (0m, "OK"), (-1m, "OK"), (0.001m, "OK"), (decimal.MaxValue, "OK"), (10m, ""), (10m, " ") })
+            {
+                var rechazo = await pasarela.CobrarAsync(monto, clave, "Entrada inválida");
+                Assert.False(rechazo.Exitoso);
+                Assert.Equal(0m, rechazo.MontoCobrado);
+                Assert.Empty(rechazo.ReferenciaTransaccion);
+            }
+
+            using var cancelado = new CancellationTokenSource();
+            cancelado.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => pasarela.CobrarAsync(10m, "CANCELADA", "Cancelación", cancelado.Token));
+        }
+
+        static string[] ProyectosPropios(Type tipo) => tipo.Assembly.GetReferencedAssemblies()
+            .Select(ensamblado => ensamblado.Name!)
+            .Where(nombre => nombre.StartsWith("LogiMarket.", StringComparison.Ordinal))
+            .OrderBy(nombre => nombre, StringComparer.Ordinal).ToArray();
+        Assert.Empty(ProyectosPropios(typeof(Pedido)));
+        Assert.Equal(new[] { "LogiMarket.Domain" }, ProyectosPropios(typeof(ConfirmacionPedidoFacade)));
+        Assert.Equal(new[] { "LogiMarket.Application", "LogiMarket.Domain" }, ProyectosPropios(typeof(LogiMarketDbContext)));
 
         // 2. ISP (Interface Segregation Principle): Contratos pequeños y específicos
         // ISalidaDocumento contiene una única operación de emisión sin métodos adicionales innecesarios

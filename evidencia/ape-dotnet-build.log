@@ -1,17 +1,11 @@
-  Determinando los proyectos que se van a restaurar...
-  Se ha restaurado src/LogiMarket.Domain\LogiMarket.Domain.csproj (en 372 ms).
-  Se ha restaurado src/LogiMarket.Application\LogiMarket.Application.csproj (en 406 ms).
-  Se ha restaurado src/LogiMarket.WinForms\LogiMarket.WinForms.csproj (en 1,17 s).
-  Se ha restaurado tests/LogiMarket.Tests\LogiMarket.Tests.csproj (en 1,21 s).
-  Se ha restaurado src/LogiMarket.Infrastructure\LogiMarket.Infrastructure.csproj (en 1,27 s).
-  LogiMarket.Domain -> src/LogiMarket.Domain\bin\Debug\net8.0\LogiMarket.Domain.dll
-  LogiMarket.Application -> src/LogiMarket.Application\bin\Debug\net8.0\LogiMarket.Application.dll
-  LogiMarket.Infrastructure -> src/LogiMarket.Infrastructure\bin\Debug\net8.0\LogiMarket.Infrastructure.dll
-  LogiMarket.WinForms -> src/LogiMarket.WinForms\bin\Debug\net8.0-windows\LogiMarket.WinForms.dll
-  LogiMarket.Tests -> tests/LogiMarket.Tests\bin\Debug\net8.0\LogiMarket.Tests.dll
+  LogiMarket.Domain -> src\LogiMarket.Domain\bin\Debug\net8.0\LogiMarket.Domain.dll
+  LogiMarket.Application -> src\LogiMarket.Application\bin\Debug\net8.0\LogiMarket.Application.dll
+  LogiMarket.Infrastructure -> src\LogiMarket.Infrastructure\bin\Debug\net8.0\LogiMarket.Infrastructure.dll
+  LogiMarket.WinForms -> src\LogiMarket.WinForms\bin\Debug\net8.0-windows\LogiMarket.WinForms.dll
+  LogiMarket.Tests -> tests\LogiMarket.Tests\bin\Debug\net8.0\LogiMarket.Tests.dll
 
 Compilación correcta.
     0 Advertencia(s)
     0 Errores
 
-Tiempo transcurrido 00:00:50.49
+Tiempo transcurrido 00:01:14.21

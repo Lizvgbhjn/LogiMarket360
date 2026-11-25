@@ -86,6 +86,7 @@ public interface IMovimientoInventarioRepository
 
 public interface IEventoOutboxRepository
 {
+    Task<IReadOnlyList<EventoOutbox>> ObtenerParaProcesarAsync(int limite, bool recuperarFallidos, CancellationToken ct = default);
     Task<IReadOnlyList<EventoOutbox>> ObtenerPendientesAsync(int limite = 20, CancellationToken ct = default);
     Task<IReadOnlyList<EventoOutbox>> ObtenerTodosAsync(CancellationToken ct = default);
     Task AgregarAsync(EventoOutbox evento, CancellationToken ct = default);

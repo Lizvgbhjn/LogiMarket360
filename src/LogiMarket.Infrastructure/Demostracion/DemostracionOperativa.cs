@@ -10,7 +10,7 @@ public sealed class DemostracionOperativa(
     IServicioSesion sesion,
     PasarelaModernaSimulada moderna,
     PasarelaLegadaSimulada legada,
-    OutboxProcessor outbox) : IDemostracionOperativa
+    OutboxAutomatico outbox, ConfiguracionEnvioOutbox configuracion) : IDemostracionOperativa
 {
     public bool Configurar(bool fallarCobro, bool fallarOutbox, bool usarSms)
     {
@@ -19,8 +19,8 @@ public sealed class DemostracionOperativa(
 
         moderna.InducirError = fallarCobro;
         legada.InducirError = fallarCobro;
-        outbox.InducirFallo = fallarOutbox;
-        outbox.UsarSms = usarSms;
+        configuracion.Fallar = fallarOutbox;
+        configuracion.PreferirSms = usarSms;
         return true;
     }
 
@@ -29,7 +29,7 @@ public sealed class DemostracionOperativa(
         if (sesion.RolActual != RolUsuario.ADMIN)
             return Task.FromResult(-1);
 
-        return recuperarFallidos ? outbox.ReprocesarFallidosAsync() : outbox.ProcesarPendientesAsync();
+        return outbox.EjecutarCicloAsync(recuperarFallidos);
     }
 
     public ResultadoDemoCatalogo MedirCatalogo()

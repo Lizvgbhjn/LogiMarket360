@@ -6,12 +6,12 @@ using LogiMarket.Domain.State;
 
 public class Usuario
 {
-    public int Id { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
-    public RolUsuario Rol { get; set; }
-    public bool Activo { get; set; } = true;
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public int Id { get; private set; }
+    public string Username { get; private set; } = string.Empty;
+    public string PasswordHash { get; private set; } = string.Empty;
+    public RolUsuario Rol { get; private set; }
+    public bool Activo { get; private set; } = true;
+    public DateTime FechaCreacion { get; private set; } = DateTime.UtcNow;
 
     public Usuario() { }
 
@@ -146,11 +146,11 @@ public class Kit
 
 public class KitComponente
 {
-    public int Id { get; set; }
-    public string KitCodigo { get; set; } = string.Empty;
-    public string HijoCodigo { get; set; } = string.Empty;
-    public bool EsHijoKit { get; set; }
-    public int Cantidad { get; set; } = 1;
+    public int Id { get; private set; }
+    public string KitCodigo { get; private set; } = string.Empty;
+    public string HijoCodigo { get; private set; } = string.Empty;
+    public bool EsHijoKit { get; private set; }
+    public int Cantidad { get; private set; } = 1;
 
     public KitComponente() { }
 
@@ -159,6 +159,13 @@ public class KitComponente
         KitCodigo = kitCodigo.Trim().ToUpperInvariant();
         HijoCodigo = hijoCodigo.Trim().ToUpperInvariant();
         EsHijoKit = esHijoKit;
-        Cantidad = cantidad > 0 ? cantidad : 1;
+        ActualizarComposicion(esHijoKit, cantidad);
+    }
+
+    public void ActualizarComposicion(bool esHijoKit, int cantidad)
+    {
+        if (cantidad <= 0) throw new ArgumentOutOfRangeException(nameof(cantidad));
+        EsHijoKit = esHijoKit;
+        Cantidad = cantidad;
     }
 }

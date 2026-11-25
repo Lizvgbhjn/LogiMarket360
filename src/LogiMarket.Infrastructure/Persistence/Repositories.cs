@@ -94,8 +94,7 @@ public class KitRepository : IKitRepository
                 continue;
             }
 
-            actual.Cantidad = nuevo.Cantidad;
-            actual.EsHijoKit = nuevo.EsHijoKit;
+            actual.ActualizarComposicion(nuevo.EsHijoKit, nuevo.Cantidad);
         }
 
         foreach (var nuevo in solicitados.Values)
@@ -352,6 +351,15 @@ public class EventoOutboxRepository : IEventoOutboxRepository
     private readonly LogiMarketDbContext _context;
 
     public EventoOutboxRepository(LogiMarketDbContext context) => _context = context;
+
+    public async Task<IReadOnlyList<EventoOutbox>> ObtenerParaProcesarAsync(int limite, bool recuperarFallidos, CancellationToken ct = default)
+    {
+        return await _context.EventosOutbox
+            .Where(e => e.Estado == LogiMarket.Domain.Enums.EstadoOutbox.PENDIENTE
+                || (recuperarFallidos && e.Estado == LogiMarket.Domain.Enums.EstadoOutbox.FALLIDO))
+            .OrderBy(e => e.Estado == LogiMarket.Domain.Enums.EstadoOutbox.PENDIENTE ? 0 : 1)
+            .ThenBy(e => e.Reintentos).ThenBy(e => e.Id).Take(limite).ToListAsync(ct);
+    }
 
     public async Task<IReadOnlyList<EventoOutbox>> ObtenerPendientesAsync(int limite = 20, CancellationToken ct = default)
     {

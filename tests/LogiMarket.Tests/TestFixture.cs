@@ -18,6 +18,8 @@ using LogiMarket.Infrastructure.Outbox;
 using LogiMarket.Infrastructure.Persistence;
 using LogiMarket.Infrastructure.Session;
 using LogiMarket.Application.Mediator;
+using LogiMarket.Application.Ventas;
+using LogiMarket.Infrastructure.AbstractFactory;
 
 public class TestFixture : IDisposable
 {
@@ -36,6 +38,7 @@ public class TestFixture : IDisposable
 
         services.AddScoped<DatabaseSeeder>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<AuditoriaCobroTransaccional>();
 
         // Repositorios
         services.AddScoped<IProductoRepository, ProductoRepository>();
@@ -65,7 +68,7 @@ public class TestFixture : IDisposable
         services.AddScoped<IPasarelaPago>(sp =>
         {
             var moderna = sp.GetRequiredService<PasarelaModernaSimulada>();
-            var auditoriaRepo = sp.GetRequiredService<IAuditoriaRepository>();
+            var auditoriaRepo = sp.GetRequiredService<AuditoriaCobroTransaccional>();
             var sesion = sp.GetRequiredService<IServicioSesion>();
             var metricas = sp.GetRequiredService<IMetricasSesion>();
 
@@ -75,7 +78,14 @@ public class TestFixture : IDisposable
 
         services.AddScoped<NotificadorCreator, EmailNotificadorCreator>();
         services.AddScoped<OutboxProcessor>();
-        services.AddScoped<IOutboxProcessor>(sp => sp.GetRequiredService<OutboxProcessor>());
+        services.AddScoped<SmsNotificadorCreator>();
+        services.AddSingleton<ConfiguracionEnvioOutbox>();
+        services.AddScoped<IEnvioOutbox, EnvioOutboxSimulado>();
+        services.AddSingleton<OutboxAutomatico>();
+        services.AddSingleton<IOutboxProcessor>(sp => sp.GetRequiredService<OutboxAutomatico>());
+        services.AddScoped<IGuiaEntrega, GuiaEntrega>();
+        services.AddScoped<OperacionesPedido>();
+        services.AddSingleton<IReembolsadorSimulado, ReembolsadorSimulado>();
 
         // Chain of Responsibility
         services.AddScoped<IValidadorPedido>(sp =>

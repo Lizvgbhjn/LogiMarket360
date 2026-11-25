@@ -1,6 +1,7 @@
 namespace LogiMarket.Application.Builder;
 
 using LogiMarket.Domain.Composite;
+using LogiMarket.Domain.Logistica;
 using LogiMarket.Domain.Visitor;
 using LogiMarket.Application.Ports;
 using LogiMarket.Domain.Entities;
@@ -59,7 +60,7 @@ public class PedidoBuilder(IGuiaEntrega? entrega = null)
             throw new DomainException("No se puede construir un pedido sin al menos una línea de producto o kit.");
 
         var codigoPedido = string.IsNullOrWhiteSpace(_codigo)
-            ? $"PED-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}"
+            ? $"PED-{Guid.NewGuid():N}"
             : _codigo;
 
         var pedido = new Pedido(codigoPedido, _cliente.Id, _tipoEnvio, _idempotencyKey) { Cliente = _cliente };
@@ -83,7 +84,7 @@ public class PedidoBuilder(IGuiaEntrega? entrega = null)
                 sku, info.Nombre, info.CantidadTotal, info.PrecioUnitario, info.PesoUnitario));
         }
 
-        var tarifa = entrega?.Tarifa(_tipoEnvio) ?? (_tipoEnvio == TipoEnvio.EXPRES ? 12.00m : 5.00m);
+        var tarifa = entrega?.Tarifa(_tipoEnvio) ?? CondicionesEntrega.Para(_tipoEnvio).Tarifa;
         pedido.CalcularTotales(tarifa, calculadoraDescuento);
 
         return pedido;

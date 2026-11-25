@@ -47,13 +47,24 @@ static class Program
         // 2. Ejecutar formulario principal
         using var uiScope = serviceProvider.CreateScope();
         var mainForm = uiScope.ServiceProvider.GetRequiredService<MainForm>();
-        System.Windows.Forms.Application.Run(mainForm);
+        using var terminarOutbox = new CancellationTokenSource();
+        var outbox = serviceProvider.GetRequiredService<OutboxAutomatico>();
+        var trabajoOutbox = Task.Run(() => outbox.EjecutarAsync(TimeSpan.FromSeconds(15), terminarOutbox.Token));
+        try
+        {
+            System.Windows.Forms.Application.Run(mainForm);
+        }
+        finally
+        {
+            terminarOutbox.Cancel();
+            trabajoOutbox.GetAwaiter().GetResult();
+        }
     }
 
     private static IPasarelaPago ProtegerPasarela(IServiceProvider services, IPasarelaPago pasarela)
     {
         var sesion = services.GetRequiredService<IServicioSesion>();
-        var decorador = new AuditoriaPagoDecorator(pasarela, services.GetRequiredService<IAuditoriaRepository>(), sesion);
+        var decorador = new AuditoriaPagoDecorator(pasarela, services.GetRequiredService<AuditoriaCobroTransaccional>(), sesion);
         return new PagoAutorizadoProxy(decorador, sesion, services.GetRequiredService<IMetricasSesion>());
     }
 
@@ -62,15 +73,18 @@ static class Program
         // Persistencia EF Core SQLite
         var rutaDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logimarket360-migrada.db");
         services.AddDbContext<LogiMarketDbContext>(options =>
-            options.UseSqlite($"Data Source={rutaDb}"));
+            options.UseSqlite($"Data Source={rutaDb};Foreign Keys=True"));
 
         services.AddScoped<DatabaseSeeder>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<AuditoriaCobroTransaccional>();
         services.AddScoped<GestionCatalogo>();
         services.AddScoped<GestionInventario>();
-        services.AddScoped<ConsultasOperativas>();
+        services.AddSingleton<IConsultaAislada, ConsultaAislada>();
+        services.AddSingleton<ConsultasOperativas>();
         services.AddScoped<GestionVentas>();
         services.AddScoped<OperacionesPedido>();
+        services.AddSingleton<IReembolsadorSimulado, ReembolsadorSimulado>();
         services.AddScoped<IGuiaEntrega, GuiaEntrega>();
         services.AddSingleton<IMetadatosCatalogo, CatalogoVisualFlyweightFactory>();
         services.AddScoped<IEmisorComprobantes, EmisorComprobantes>();
@@ -122,7 +136,10 @@ static class Program
 
         // Outbox Processor
         services.AddScoped<OutboxProcessor>();
-        services.AddScoped<IOutboxProcessor>(sp => sp.GetRequiredService<OutboxProcessor>());
+        services.AddSingleton<ConfiguracionEnvioOutbox>();
+        services.AddScoped<IEnvioOutbox, EnvioOutboxSimulado>();
+        services.AddSingleton<OutboxAutomatico>();
+        services.AddSingleton<IOutboxProcessor>(sp => sp.GetRequiredService<OutboxAutomatico>());
 
         // Patrón Chain of Responsibility: Cadena de validación de pedidos
         services.AddScoped<IValidadorPedido>(sp =>

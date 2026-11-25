@@ -249,12 +249,29 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("KitHijoCodigo")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("TEXT")
+                        .HasComputedColumnSql("CASE WHEN \"EsHijoKit\" = 1 THEN \"HijoCodigo\" ELSE NULL END", false);
+
+                    b.Property<string>("ProductoHijoSku")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("TEXT")
+                        .HasComputedColumnSql("CASE WHEN \"EsHijoKit\" = 0 THEN \"HijoCodigo\" ELSE NULL END", false);
+
                     b.HasKey("Id");
+
+                    b.HasIndex("KitHijoCodigo");
+
+                    b.HasIndex("ProductoHijoSku");
 
                     b.HasIndex("KitCodigo", "HijoCodigo")
                         .IsUnique();
 
-                    b.ToTable("KitComponentes");
+                    b.ToTable("KitComponentes", t =>
+                        {
+                            t.HasCheckConstraint("CK_KitComponentes_Cantidad", "\"Cantidad\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("LogiMarket.Domain.Entities.MovimientoInventario", b =>
@@ -289,6 +306,8 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Sku");
 
                     b.ToTable("MovimientosInventario");
                 });
@@ -492,6 +511,8 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PedidoId");
 
+                    b.HasIndex("Sku");
+
                     b.ToTable("PedidoDetalleComponentes");
                 });
 
@@ -535,7 +556,12 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Nombre");
 
-                    b.ToTable("Productos");
+                    b.ToTable("Productos", t =>
+                        {
+                            t.HasCheckConstraint("CK_Productos_Precio", "CAST(\"Precio\" AS NUMERIC) > 0");
+
+                            t.HasCheckConstraint("CK_Productos_Stock", "\"Stock\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("LogiMarket.Domain.Entities.Usuario", b =>
@@ -596,6 +622,25 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
                         .HasForeignKey("KitCodigo")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("LogiMarket.Domain.Entities.Kit", null)
+                        .WithMany()
+                        .HasForeignKey("KitHijoCodigo")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LogiMarket.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("ProductoHijoSku")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("LogiMarket.Domain.Entities.MovimientoInventario", b =>
+                {
+                    b.HasOne("LogiMarket.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("Sku")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LogiMarket.Domain.Entities.Pago", b =>
@@ -633,6 +678,12 @@ namespace LogiMarket.Infrastructure.Persistence.Migrations
                         .WithMany("ComponentesFisicosSnapshot")
                         .HasForeignKey("PedidoId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LogiMarket.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("Sku")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

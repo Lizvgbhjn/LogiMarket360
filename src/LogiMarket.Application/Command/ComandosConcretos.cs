@@ -8,6 +8,7 @@ using LogiMarket.Application.Ports;
 using LogiMarket.Application.Singleton;
 using LogiMarket.Domain.Entities;
 using LogiMarket.Domain.Enums;
+using LogiMarket.Domain.Logistica;
 using LogiMarket.Domain.Exceptions;
 using LogiMarket.Domain.TemplateMethod;
 
@@ -150,7 +151,7 @@ public class DespacharPedidoCommand : IComandoOperacion
             pedido.Despachar(_dto.GuiaDespacho);
             await _pedidoRepo.ActualizarAsync(pedido, ct);
 
-            var plazoDias = _entrega?.PlazoDias(pedido.TipoEnvio) ?? (pedido.TipoEnvio == TipoEnvio.EXPRES ? 1 : 3);
+            var plazoDias = _entrega?.PlazoDias(pedido.TipoEnvio) ?? CondicionesEntrega.Para(pedido.TipoEnvio).PlazoDias;
             var despacho = new Despacho(pedido.Id, _dto.GuiaDespacho, pedido.TipoEnvio,
                 plazoDias, pedido.FechaDespacho!.Value);
             await _despachoRepo.AgregarAsync(despacho, ct);
@@ -217,6 +218,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
     private readonly IMetricasSesion? _metricas;
     private readonly IPublicadorEventos? _publicador;
     private readonly SolicitarDevolucionDto _dto;
+    private readonly IReembolsadorSimulado _reembolsador;
 
     public string Nombre => "ProcesarDevolucionCommand";
     public string DetalleEntrada => $"PedidoId: {_dto.PedidoId}, Motivo: {_dto.Motivo}, SinUso: {_dto.ProductoSinUso}";
@@ -230,7 +232,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
         IAuditoriaRepository auditoriaRepo,
         IUnitOfWork unitOfWork,
         IServicioSesion servicioSesion,
-        SolicitarDevolucionDto dto,
+        SolicitarDevolucionDto dto, IReembolsadorSimulado reembolsador,
         IMetricasSesion? metricas = null,
         IPublicadorEventos? publicador = null)
     {
@@ -243,6 +245,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
         _unitOfWork = unitOfWork;
         _servicioSesion = servicioSesion;
         _dto = dto;
+        _reembolsador = reembolsador;
         _metricas = metricas;
         _publicador = publicador;
     }
@@ -274,6 +277,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
             _dto.ProductoSinUso,
             _dto.Observaciones);
 
+        string? referencia = null;
         try
         {
             var resultadoEvaluacion = await template.ProcesarDevolucionAsync(
@@ -292,27 +296,26 @@ public class ProcesarDevolucionCommand : IComandoOperacion
                     {
                         var producto = await _productoRepo.ObtenerPorSkuAsync(comp.Sku, token)
                             ?? throw new DomainException($"Producto {comp.Sku} no encontrado para reintegro.");
-                        if (producto != null)
-                        {
-                            var stockAnterior = producto.Stock;
-                            producto.ReintegrarStock(comp.CantidadTotalFisica);
-                            await _productoRepo.ActualizarAsync(producto, token);
+                        var stockAnterior = producto.Stock;
+                        producto.ReintegrarStock(comp.CantidadTotalFisica);
+                        await _productoRepo.ActualizarAsync(producto, token);
 
-                            await _movimientoRepo.AgregarAsync(new MovimientoInventario
-                            {
-                                Sku = comp.Sku,
-                                TipoMovimiento = TipoMovimientoInventario.DEVOLUCION,
-                                Cantidad = comp.CantidadTotalFisica,
-                                StockAnterior = stockAnterior,
-                                StockPosterior = producto.Stock,
-                                Referencia = $"DEV-{pedido.Codigo}",
-                                Fecha = DateTime.UtcNow
-                            }, ct);
-                        }
+                        await _movimientoRepo.AgregarAsync(new MovimientoInventario
+                        {
+                            Sku = comp.Sku,
+                            TipoMovimiento = TipoMovimientoInventario.DEVOLUCION,
+                            Cantidad = comp.CantidadTotalFisica,
+                            StockAnterior = stockAnterior,
+                            StockPosterior = producto.Stock,
+                            Referencia = $"DEV-{pedido.Codigo}",
+                            Fecha = DateTime.UtcNow
+                        }, token);
                     }
                 },
                 async (resultado, token) =>
                 {
+                    referencia = await _reembolsador.ReembolsarAsync(pedido.Id, resultado.MontoReembolso, token);
+
                     // Registrar evento Outbox
                     var jsonOutbox = JsonSerializer.Serialize(new
                     {
@@ -320,6 +323,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
                         Codigo = pedido.Codigo,
                         Motivo = _dto.Motivo.ToString(),
                         MontoReembolso = resultado.MontoReembolso,
+                        ReferenciaReembolso = referencia,
                         Fecha = DateTime.UtcNow
                     });
                     await _outboxRepo.AgregarAsync(new EventoOutbox
@@ -338,7 +342,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
                 Usuario = _servicioSesion.UsuarioActual?.Username ?? "SISTEMA",
                 Accion = "PROCESAR_DEVOLUCION",
                 Entidad = "Devolucion",
-                Detalle = $"Devolución aprobada para pedido {pedido.Codigo}. Reembolso: {resultadoEvaluacion.MontoReembolso:F2} USD (sin flete). Motivo: {_dto.Motivo}.",
+                Detalle = $"Devolución aprobada para pedido {pedido.Codigo}. Reembolso: {resultadoEvaluacion.MontoReembolso:F2} USD (sin flete). Motivo: {_dto.Motivo}. Referencia: {referencia}.",
                 Fecha = DateTime.UtcNow,
                 Exitoso = true
             }, ct);
@@ -363,6 +367,7 @@ public class ProcesarDevolucionCommand : IComandoOperacion
             {
                 PedidoId = pedido.Id,
                 MontoReembolso = resultadoEvaluacion.MontoReembolso,
+                ReferenciaReembolso = referencia,
                 Motivo = _dto.Motivo.ToString()
             });
         }

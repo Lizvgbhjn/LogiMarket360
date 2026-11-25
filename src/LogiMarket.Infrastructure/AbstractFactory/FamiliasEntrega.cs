@@ -1,6 +1,7 @@
 namespace LogiMarket.Infrastructure.AbstractFactory;
 
 using LogiMarket.Domain.Enums;
+using LogiMarket.Domain.Logistica;
 
 // Interfaces de la familia de productos
 public interface ICalculadorTarifa
@@ -31,13 +32,13 @@ public interface IServicioEntregaFactory
 // ----------------- Familia ESTÁNDAR -----------------
 public class CalculadorTarifaEstandar : ICalculadorTarifa
 {
-    public decimal ObtenerTarifa() => 5.00m;
+    public decimal ObtenerTarifa() => CondicionesEntrega.Para(TipoEnvio.ESTANDAR).Tarifa;
 }
 
 public class CalculadorPlazoEstandar : ICalculadorPlazo
 {
-    public int ObtenerPlazoDias() => 3;
-    public DateTime CalcularFechaEntregaEstimada(DateTime fechaDespacho) => fechaDespacho.AddDays(3);
+    public int ObtenerPlazoDias() => CondicionesEntrega.Para(TipoEnvio.ESTANDAR).PlazoDias;
+    public DateTime CalcularFechaEntregaEstimada(DateTime fechaDespacho) => fechaDespacho.AddDays(ObtenerPlazoDias());
 }
 
 public class GeneradorGuiaEstandar : IGeneradorGuia
@@ -59,13 +60,13 @@ public class EstandarEntregaFactory : IServicioEntregaFactory
 // ----------------- Familia EXPRÉS -----------------
 public class CalculadorTarifaExpres : ICalculadorTarifa
 {
-    public decimal ObtenerTarifa() => 12.00m;
+    public decimal ObtenerTarifa() => CondicionesEntrega.Para(TipoEnvio.EXPRES).Tarifa;
 }
 
 public class CalculadorPlazoExpres : ICalculadorPlazo
 {
-    public int ObtenerPlazoDias() => 1;
-    public DateTime CalcularFechaEntregaEstimada(DateTime fechaDespacho) => fechaDespacho.AddDays(1);
+    public int ObtenerPlazoDias() => CondicionesEntrega.Para(TipoEnvio.EXPRES).PlazoDias;
+    public DateTime CalcularFechaEntregaEstimada(DateTime fechaDespacho) => fechaDespacho.AddDays(ObtenerPlazoDias());
 }
 
 public class GeneradorGuiaExpres : IGeneradorGuia

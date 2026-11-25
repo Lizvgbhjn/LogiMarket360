@@ -13,7 +13,7 @@ public class PedidoBorradorPrototype
         // Clona un pedido BORRADOR con sus líneas y estructura anidada,
         // sin copiar identificador de persistencia ni estado de pago.
         // La copia es profunda para sus colecciones mutables.
-        var nuevoCodigo = $"CLON-{DateTime.UtcNow:HHmmss}-{Random.Shared.Next(100, 999)}";
+        var nuevoCodigo = $"CLON-{Guid.NewGuid():N}";
         var copia = new Pedido(nuevoCodigo, original.ClienteId, original.TipoEnvio)
         {
             Cliente = original.Cliente

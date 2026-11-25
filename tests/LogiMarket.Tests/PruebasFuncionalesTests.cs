@@ -8,6 +8,7 @@ using LogiMarket.Application.Command;
 using LogiMarket.Application.DTOs;
 using LogiMarket.Application.Facade;
 using LogiMarket.Application.Ports;
+using LogiMarket.Application.Ventas;
 using LogiMarket.Application.Singleton;
 using LogiMarket.Domain.Composite;
 using LogiMarket.Domain.Entities;
@@ -390,12 +391,24 @@ public class PruebasFuncionalesTests
         var pedidoDespachado = await pedidoRepo.ObtenerPorIdAsync(pedido.Id);
         Assert.Equal(EstadoPedido.DESPACHADO, pedidoDespachado!.Estado);
 
-        // 4. Entregar
-        pedidoDespachado.Entregar();
-        await pedidoRepo.ActualizarAsync(pedidoDespachado);
+        var operaciones = scope.ServiceProvider.GetRequiredService<OperacionesPedido>();
+        var ventas = (await usuarioRepo.ObtenerTodosAsync()).Single(u => u.Rol == RolUsuario.VENTAS);
+        sesion.IniciarSesion(ventas);
+        Assert.False((await operaciones.EntregarAsync(pedido.Id)).Exitoso);
+        Assert.Equal("EN_TRANSITO", (await despachoRepo.ObtenerPorPedidoIdAsync(pedido.Id))!.EstadoDespacho);
 
-        var pedidoEntregado = await pedidoRepo.ObtenerPorIdAsync(pedido.Id);
-        Assert.Equal(EstadoPedido.ENTREGADO, pedidoEntregado!.Estado);
+        sesion.IniciarSesion(bodegaUser);
+        Assert.True((await operaciones.EntregarAsync(pedido.Id)).Exitoso);
+        Assert.False((await operaciones.EntregarAsync(pedido.Id)).Exitoso);
+
+        using var lectura = fixture.ServiceProvider.CreateScope();
+        var entregado = await lectura.ServiceProvider.GetRequiredService<IPedidoRepository>().ObtenerPorIdAsync(pedido.Id);
+        var despacho = await lectura.ServiceProvider.GetRequiredService<IDespachoRepository>().ObtenerPorPedidoIdAsync(pedido.Id);
+        Assert.Equal(EstadoPedido.ENTREGADO, entregado!.Estado);
+        Assert.Equal("ENTREGADO", despacho!.EstadoDespacho);
+        Assert.Equal(entregado.FechaEntrega, despacho.FechaEntregaReal);
+        var eventos = await lectura.ServiceProvider.GetRequiredService<IEventoOutboxRepository>().ObtenerTodosAsync();
+        Assert.Single(eventos, e => e.TipoEvento == "EntregaRegistrada" && e.ContenidoJson.Contains(pedido.Codigo));
     }
 
     [Fact]
@@ -409,6 +422,7 @@ public class PruebasFuncionalesTests
             services.AddDbContext<LogiMarketDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
             services.AddScoped<DatabaseSeeder>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<AuditoriaCobroTransaccional>();
             services.AddScoped<IProductoRepository, ProductoRepository>();
             services.AddScoped<IKitRepository, KitRepository>();
             services.AddScoped<IClienteRepository, ClienteRepository>();

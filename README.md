@@ -97,8 +97,8 @@ dotnet test tests/LogiMarket.Tests/LogiMarket.Tests.csproj --logger "console;ver
 
 **Referencia para una ejecución exitosa:**
 ```text
-Pruebas totales: 42
-     Correcto: 42
+Pruebas totales: 43
+     Correcto: 43
  Con error:     0
    Omitido:     0
 Tiempo total:  ~30 segundos (100% aprobado)
@@ -164,3 +164,7 @@ Si desea reiniciar la base de datos a su estado prístino de fábrica:
 3. Al volver a iniciar la aplicación o correr las pruebas, la base de datos será recreada y repoblada automáticamente por el `DatabaseSeeder`.
 
 La aplicación inicia en Acceso y aplica las migraciones pendientes a logimarket360-migrada.db.
+
+### Procesamiento automático de Outbox
+
+Al abrir la aplicación se procesan eventos pendientes y fallidos. El ciclo se repite cada 15 segundos y abre un contexto SQLite por ejecución. Las acciones de demostración y el observador comparten el mismo coordinador en la aplicación. Los avisos son simulados y usan el contacto del cliente asociado con el pedido.

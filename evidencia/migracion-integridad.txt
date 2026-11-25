@@ -1,0 +1,8 @@
+Verificacion de una base de demostracion existente
+20261124202048_Inicial
+20261125032318_IndicesOperacion
+20261125050355_IntegridadCatalogo
+Violaciones detectadas por PRAGMA foreign_key_check: 0
+KitComponentes: Productos:ProductoHijoSku, Kits:KitHijoCodigo, Kits:KitCodigo
+PedidoDetalleComponentes: Productos:Sku, Pedidos:PedidoId
+MovimientosInventario: Productos:Sku

@@ -1,8 +1,0 @@
-Serie de pruebas para tests/LogiMarket.Tests\bin\Debug\net8.0\LogiMarket.Tests.dll (.NETCoreApp,Version=v8.0)
-Versión 17.11.1 (x64) de VSTest
-
-Iniciando la ejecución de pruebas, espere...
-1 archivos de prueba en total coincidieron con el patrón especificado.
-El proceso vstest.console no pudo conectar con el proceso testhost después de 20 segundos. Esto puede deberse a la lentitud de la máquina, configure la variable de entorno VSTEST_CONNECTION_TIMEOUT para aumentar el tiempo de espera.
-
-Serie de pruebas anulada.
