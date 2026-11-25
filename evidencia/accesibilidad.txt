@@ -1,0 +1,12 @@
+Acceso: 7 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Carrito / borrador: 8 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Cobro: 3 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Inventario: 7 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Auditoría / pruebas: 8 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Despacho: 4 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Devoluciones: 5 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Panel general: 2 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Catálogo y kits: 11 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Clientes: 8 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Pedidos e historial: 8 destinos de TAB con nombre accesible y desplazamiento habilitado.
+Reportes: 9 destinos de TAB con nombre accesible y desplazamiento habilitado.

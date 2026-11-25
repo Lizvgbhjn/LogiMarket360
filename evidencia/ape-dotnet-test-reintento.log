@@ -1,0 +1,57 @@
+Serie de pruebas para tests/LogiMarket.Tests\bin\Debug\net8.0\LogiMarket.Tests.dll (.NETCoreApp,Version=v8.0)
+Versión 17.11.1 (x64) de VSTest
+
+Iniciando la ejecución de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patrón especificado.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.31)
+[xUnit.net 00:00:02.16]   Discovering: LogiMarket.Tests
+[xUnit.net 00:00:02.27]   Discovered:  LogiMarket.Tests
+[xUnit.net 00:00:02.28]   Starting:    LogiMarket.Tests
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P21_Flyweight_1000FilasConMetadatosRepetidos_ReferenceEqualsTrueYMetadatosCompartidos [48 ms]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P16_Adapter_ProveedorLegadoYAlternativo_MismoContratoSinModificarLegado [4 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P32_Strategy_VipMayoristaNormal_PrioridadSinAcumulacionYExtensible [69 ms]
+  Correctas LogiMarket.Tests.PruebasCreacionalesTests.P12_AbstractFactory_EstandarYExpres_TarifasYPlazosCoherentesPorFamilia [70 ms]
+  Correctas LogiMarket.Tests.PruebasCreacionalesTests.P11_FactoryMethod_AlternarEmailSms_RetornaNotificadorConcretoYRegistraAviso [8 s]
+  Correctas LogiMarket.Tests.GestionOperativaTests.ConsultaNoPuedeCambiarCatalogoClientesNiPedidos [8 s]
+  Correctas LogiMarket.Tests.PruebasCreacionalesTests.P14_Prototype_ClonarKitTeletrabajo_CopiaProfundaEIndependiente [33 ms]
+  Correctas LogiMarket.Tests.PruebasCreacionalesTests.P13_Builder_PedidoVacioRechazado_PedidoCompletoCreaAgregadoValido [13 ms]
+  Correctas LogiMarket.Tests.PruebasIntegridadArquitecturaTests.P37_Outbox_FallaNotificadorYReiniciarProcesador_RecuperaYProcesaUnaSolaVez [8 s]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.Facade_ConservaAuditoriaDeAutorizacionRevertidaAlFallarLaPersistencia [9 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P03_Luis_NORMAL_Compra_2P04_2P05_Expres_Resultado102 [9 s]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P24_Command_ConfirmarDesdeUiEInvocador_MismoComandoYResultadoConHistorial [9 s]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P33_TemplateMethod_DefectoDia20Aceptado_ArrepentimientoDia10Rechazado [44 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P27_Iterator_RecorrerKitTeletrabajo_P01P02P03SinBucleInfinito [9 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P34_Visitor_KitTeletrabajo_DesgloseP01P02P03YPesoTotal1Kg [2 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P30_Observer_PedidoPagadoConTresSuscriptores_ActualizadosUnaSolaVez [3 ms]
+  Correctas LogiMarket.Tests.PruebasCreacionalesTests.P15_Singleton_ConsultarMetricasDesdeDosConsumidores_MismaInstanciaYThreadSafe [2 s]
+  Correctas LogiMarket.Tests.GestionOperativaTests.CatalogoPermiteCrudAdministrativoYProtegeLasReferencias [2 s]
+  Correctas LogiMarket.Tests.PruebasIntegridadArquitecturaTests.P35_DevolverPedidoEntregadoPorDefectoYRepetirSolicitud_Ana54ReembolsoYDevolucionUnica [2 s]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P20_Facade_ConfirmarConFalloEnUnColaborador_ConsistenciaSinPersistenciaParcial [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P07_RepetirConfirmacionConMismaClaveDeIdempotencia_NoDuplicaCobroNiStock [2 s]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P23_Chain_PedidoSinClienteYSinStock_InformaPrimerErrorLuegoSiguiente [2 s]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P29_Memento_TresEdiciones_DosDeshacer_UnRehacer_RestauraExacto [11 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P26_Interpreter_SintaxisErroneaYParentesis_ErrorLegibleSinSqlYPrecedenciaCorrecta [8 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P25_Interpreter_ConsultaEstadoPagadoAndTotalMayorOIgual50_FiltraCorrectamente [2 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P28_Mediator_ConfirmarYRevisarTresVistas_RefrescoSinAcoplamientoDirecto [16 ms]
+  Correctas LogiMarket.Tests.PruebasComportamentalesTests.P31_State_CicloValido_Y_PagadoACanceladoInvalido [3 ms]
+  Correctas LogiMarket.Tests.GestionOperativaTests.CarritoCotizaKitDelCatalogoYGuardaLaMismaComposicion [2 s]
+  Correctas LogiMarket.Tests.PruebasIntegridadArquitecturaTests.P36_DosCobrosConcurrentesSobreUnSkuConStockUno_SinSobreventaYStockNoNegativo [2 s]
+  Correctas LogiMarket.Tests.PruebasIntegridadArquitecturaTests.P38_PruebasDeLspIspDip_Y_ArquitecturaLimpia [7 ms]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P19_Decorator_AuditoriaPagoDecorator_RodeaEjecucionConLogsSinAlterarResultado [1 s]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P17_Bridge_DosComprobantesPorDosMedios_CuatroCombinacionesFuncionales [35 ms]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P04_Carmen_MAYORISTA_Compra_P03X10_Estandar_Resultado90 [1 s]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P22_Proxy_RolConsultaOBodegaIntentaPagar_RechazoAntesDeDecoratorYAdapter [1 s]
+  Correctas LogiMarket.Tests.PruebasEstructuralesTests.P18_Composite_KitsYComposicionAnidada_Precios50Y60_CicloRechazado [4 ms]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P08_PedidoPAGADO_IntentarCancelarYModificar_OperacionesDenegadas [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P10_CerrarYReabrir_InformacionPersisteEnSqliteYCoincide [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P02_Ana_VIP_Compra_KitTeletrabajoX1_Estandar_Resultado59 [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P05_KitTeletrabajoX6_Requiere6_P02_Y_SoloHay5_RechazoSinEfectosColaterales [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P06_SimularErrorDeCobroEnPedidoValido_ConservaInventarioYEstado [1 s]
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P01_CreacionDeDbDesdeArchivoInexistenteYSeed_AplicaSinDuplicados [1 s]
+[xUnit.net 00:00:27.63]   Finished:    LogiMarket.Tests
+  Correctas LogiMarket.Tests.PruebasFuncionalesTests.P09_DespacharYEntregarConBODEGA_IntentarDespacharSinPago_SecuenciaProtegida [1 s]
+
+La serie de pruebas se ejecutó correctamente.
+Pruebas totales: 42
+     Correcto: 42
+ Tiempo total: 29,4181 Segundos

@@ -1,0 +1,4 @@
+2026-11-25T04:13:02.8076174Z | COBRO_INICIO | [INICIO] Cobro A29C5FD0 | Prov: PasarelaModernaSimulada | Monto: 59,00 USD | RefIdem: a1859642397644b5861302f3568f62b0
+2026-11-25T04:13:02.8660646Z | COBRO_RECHAZADO | [FIN] Cobro A29C5FD0 | Estado: RECHAZADO | Ref:  | Msg: Rechazo inducido en Pasarela Moderna (Fondos insuficientes simulados).
+2026-11-25T04:13:03.3895947Z | COBRO_INICIO | [INICIO] Cobro 44FDD945 | Prov: PasarelaLegadaAdapter | Monto: 59,00 USD | RefIdem: a1859642397644b5861302f3568f62b0
+2026-11-25T04:13:03.3942271Z | COBRO_EXITOSO | [FIN] Cobro 44FDD945 | Estado: APROBADO | Ref: LEGACY-AUTH-2DF1A8EE | Msg: Cobro completado exitosamente a través de Pasarela Legada Adaptada.

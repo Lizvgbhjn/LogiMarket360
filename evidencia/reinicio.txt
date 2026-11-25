@@ -1,0 +1,1 @@
+Segundo proceso WinForms con un nuevo DbContext. El pedido PED-EVIDENCIA-65503CEE se recuperó ENTREGADO, con pago de USD 59,00, reembolso de USD 54,00 y P01 con 8 unidades.

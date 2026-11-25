@@ -1,0 +1,1 @@
+P21: 1.000 filas equivalentes, 5 SKU, 7 repeticiones después de calentamiento. Flyweight: 5 instancias únicas y 65.568 bytes asignados por hilo (mediana). Sin compartir: 1.000 instancias y 113.088 bytes asignados (mediana). Los bytes corresponden a asignación durante la construcción, incluida la caché, no a memoria retenida.

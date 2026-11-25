@@ -1,0 +1,1 @@
+CONSULTA: Cobro rechazado por Proxy: El rol 'CONSULTA' no cuenta con permisos de cobro financiero.. Registros de auditoría antes: 118; después: 118.

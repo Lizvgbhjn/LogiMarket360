@@ -1,0 +1,1 @@
+Evento 25 del pedido PED-EVIDENCIA-65503CEE: FALLIDO, intentos 1, luego PROCESADO, procesado a 2026-11-25T04:13:03.6349169Z.
