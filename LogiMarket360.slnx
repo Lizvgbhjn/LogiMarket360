@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LogiMarket.Application/LogiMarket.Application.csproj" />
+    <Project Path="src/LogiMarket.Domain/LogiMarket.Domain.csproj" />
+    <Project Path="src/LogiMarket.Infrastructure/LogiMarket.Infrastructure.csproj" />
+    <Project Path="src/LogiMarket.WinForms/LogiMarket.WinForms.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LogiMarket.Tests/LogiMarket.Tests.csproj" />
+  </Folder>
+</Solution>
